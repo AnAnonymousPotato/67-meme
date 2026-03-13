@@ -1,983 +1,669 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>67</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>67 — The Edit</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
-  background: #0a0a0a;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  color: white;
-}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#060606;color:#fff;font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}
 
-#container {
-  width: 100%; height: 100%;
-  position: relative;
-  overflow: hidden;
-}
+#app{position:relative;width:100%;height:100%;overflow:hidden;isolation:isolate}
 
-.scene {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  opacity: 0;
-  pointer-events: none;
-  transition: none;
-}
+/* ── overlays ── */
+#scanlines,#vignette,#flash,#chromatic,#bloom{position:absolute;inset:0;pointer-events:none}
+#scanlines{z-index:60;opacity:.12;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 1px,transparent 1px 4px);mix-blend-mode:soft-light}
+#vignette{z-index:61;background:radial-gradient(ellipse at center,transparent 42%,rgba(0,0,0,.72)100%)}
+#flash{z-index:58;background:#fff;opacity:0}
+#flash.fire{animation:flashA .16s ease-out}
+@keyframes flashA{0%{opacity:.85}100%{opacity:0}}
+#chromatic{z-index:57;opacity:0;mix-blend-mode:screen}
+#bloom{z-index:56;opacity:0;filter:blur(60px);transition:opacity 1.2s ease}
 
-.scene.active {
-  opacity: 1;
-  pointer-events: all;
-}
+/* ── hud ── */
+.hud{position:absolute;z-index:70;display:flex;align-items:center;pointer-events:none}
+#hudTL{top:clamp(8px,1.6vh,18px);left:clamp(10px,2vw,20px)}
+#hudTR{top:clamp(8px,1.6vh,18px);right:clamp(10px,2vw,20px);gap:8px}
+#hudBL{bottom:clamp(8px,1.6vh,18px);left:clamp(10px,2vw,20px)}
+#hudBR{bottom:clamp(8px,1.6vh,18px);right:clamp(10px,2vw,20px)}
+.hudTag{font-size:clamp(8px,1.2vw,11px);letter-spacing:.38em;text-transform:uppercase;color:#252525;font-weight:500}
+.hudTime{font-family:"Courier New",monospace;font-size:clamp(9px,1.2vw,12px);color:#252525;font-variant-numeric:tabular-nums}
+.hudBtn{pointer-events:auto;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);color:#666;padding:6px 10px;border-radius:999px;font-size:clamp(8px,1.1vw,10px);letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:.25s ease;font-family:inherit;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.hudBtn:hover{color:#ddd;border-color:rgba(255,255,255,.18)}
 
-#scene0 { background: #0a0a0a; }
+/* ── progress ── */
+#progress{position:absolute;left:0;bottom:0;height:2px;width:0%;z-index:80;background:linear-gradient(90deg,#ff3b30,#ff6b2b,#ffd60a);box-shadow:0 0 16px rgba(255,59,48,.4)}
 
-#scene0 .title-67 {
-  font-size: clamp(120px, 30vw, 400px);
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  color: white;
-  opacity: 0;
-  transform: scale(0.3);
-  filter: blur(20px);
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* ── beat indicator ── */
+#beatDot{position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;background:#ff3b30;z-index:3;transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none;transition:none}
 
-#scene0.active .title-67 {
-  opacity: 1;
-  transform: scale(1);
-  filter: blur(0);
-}
+/* ── play overlay ── */
+#playOverlay{position:absolute;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:radial-gradient(circle at center,rgba(255,255,255,.025),transparent 28%),linear-gradient(180deg,#050505,#080808);cursor:pointer;transition:opacity .5s ease,visibility .5s ease}
+#playOverlay.gone{opacity:0;visibility:hidden;pointer-events:none}
+.playRing{width:min(22vw,100px);height:min(22vw,100px);min-width:64px;min-height:64px;border-radius:50%;border:1.5px solid rgba(255,255,255,.12);display:grid;place-items:center;position:relative;transition:.3s ease}
+.playRing::before{content:"";position:absolute;inset:-12px;border-radius:50%;border:1px solid rgba(255,255,255,.04);animation:pulse 2.2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.9);opacity:0}30%{opacity:.3}100%{transform:scale(1.16);opacity:0}}
+#playOverlay:hover .playRing{transform:scale(1.04);border-color:rgba(255,255,255,.24);box-shadow:0 0 50px rgba(255,255,255,.05)}
+.playTri{width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:19px solid #fff;margin-left:4px}
+.playTitle{font-size:clamp(10px,1.5vw,14px);letter-spacing:.5em;text-transform:uppercase;color:#666}
+.playSub{font-size:clamp(9px,1.2vw,11px);letter-spacing:.2em;color:#333}
 
-#scene0 .subtitle {
-  font-size: clamp(12px, 2vw, 24px);
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  opacity: 0;
-  color: #666;
-  transform: translateY(20px);
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s;
-}
+/* ── scenes ── */
+.scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;pointer-events:none}
+.scene.active{opacity:1;pointer-events:auto}
 
-#scene0.active .subtitle {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* s0 */
+.redLine{position:absolute;height:1px;width:0;background:linear-gradient(90deg,transparent,var(--accent,#ff3b30),transparent);opacity:0}
+#scene0 .lineA{top:27%;left:0}
+#scene0 .lineB{bottom:27%;right:0}
+.title67{font-size:clamp(110px,30vw,420px);font-weight:900;line-height:.88;letter-spacing:-.06em;opacity:0;transform:scale(.38);filter:blur(28px);transition:all .9s cubic-bezier(.16,1,.3,1)}
+.subtitle{margin-top:.5rem;font-size:clamp(9px,1.6vw,16px);letter-spacing:.55em;text-transform:uppercase;color:#505050;opacity:0;transform:translateY(18px);transition:all .65s cubic-bezier(.16,1,.3,1) .5s}
+#scene0.active .title67{opacity:1;transform:scale(1);filter:blur(0)}
+#scene0.active .subtitle{opacity:1;transform:translateY(0)}
 
-#scene1 { background: linear-gradient(135deg, #0a0a0a, #111); }
+/* s1 */
+.question{font-size:clamp(18px,4.2vw,54px);font-weight:300;text-align:center;line-height:1.55;max-width:88%;opacity:0;transform:translateY(20px)}
+.question strong{font-weight:800}
 
-.question-text {
-  font-size: clamp(18px, 4vw, 48px);
-  font-weight: 300;
-  text-align: center;
-  padding: 0 20px;
-  opacity: 0;
-  line-height: 1.6;
-}
+/* s2 */
+.mathExpr{display:flex;align-items:center;gap:clamp(10px,3vw,36px);font-size:clamp(64px,18vw,260px);line-height:1;font-weight:200}
+.mathExpr .num,.mathExpr .op{opacity:0}
+.mathExpr .num{transform:translateY(80px)}
+.mathExpr .op{transform:scale(.15) rotate(-20deg);color:#ff3b30;text-shadow:0 0 30px rgba(255,59,48,.3)}
 
-#scene2 { background: #0a0a0a; }
+/* s3 */
+.wrongAnswer{position:absolute;font-weight:900;font-size:clamp(40px,10vw,150px);color:#333;opacity:0;text-shadow:0 0 20px rgba(255,255,255,.03)}
+#wa1{top:17%;left:14%;transform:scale(.5) rotate(-14deg)}
+#wa2{top:40%;right:12%;transform:scale(.5) rotate(11deg)}
+#wa3{bottom:15%;left:34%;transform:scale(.5) rotate(-6deg)}
+.wrongLabel{position:absolute;bottom:12%;font-size:clamp(9px,1.5vw,15px);letter-spacing:.45em;text-transform:uppercase;color:#ff3b30;opacity:0}
+.wrongX{position:absolute;font-size:clamp(60px,14vw,180px);color:rgba(255,59,48,.06);opacity:0;font-weight:900}
 
-.math-expr {
-  display: flex;
-  align-items: center;
-  gap: clamp(10px, 3vw, 40px);
-  font-size: clamp(60px, 18vw, 250px);
-  font-weight: 200;
-}
+/* s4 */
+.answer67{font-size:clamp(110px,30vw,400px);font-weight:900;line-height:.88;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:2px #fff;opacity:0;transform:perspective(800px) rotateX(90deg) scale(.9);transition:all 1s cubic-bezier(.16,1,.3,1);filter:drop-shadow(0 0 30px rgba(255,255,255,.06))}
+.answer67.fill{color:#fff;-webkit-text-stroke:0;text-shadow:0 0 40px rgba(255,255,255,.12)}
+#scene4.active .answer67{opacity:1;transform:perspective(800px) rotateX(0) scale(1)}
+.answerCap{margin-top:.4rem;font-size:clamp(9px,1.6vw,16px);letter-spacing:.55em;text-transform:uppercase;color:#484848;opacity:0;transform:translateY(12px)}
+.answerGlow{position:absolute;width:clamp(200px,50vw,600px);height:clamp(200px,50vw,600px);border-radius:50%;background:radial-gradient(circle,rgba(255,59,48,.06),transparent 60%);opacity:0;pointer-events:none;z-index:-1;transition:opacity 1.2s ease}
 
-.math-expr .num {
-  opacity: 0;
-  transform: translateY(80px);
-}
+/* s5 */
+.lore{max-width:min(85vw,860px);text-align:center;font-size:clamp(15px,2.5vw,32px);line-height:1.85;color:#7a7a7a;opacity:0;transform:translateY(16px)}
+.lore em{color:#fff;font-style:normal;font-weight:700}
 
-.math-expr .op {
-  opacity: 0;
-  transform: scale(0);
-  color: #ff3333;
-}
+/* s5b - new quote scene */
+.quoteWrap{text-align:center;max-width:min(82vw,780px);opacity:0;transform:scale(.95)}
+.quoteWrap .q{font-size:clamp(16px,2.8vw,38px);font-weight:300;line-height:1.7;font-style:italic;color:#898989}
+.quoteWrap .q em{color:#fff;font-style:normal;font-weight:700}
+.quoteWrap .attr{margin-top:1rem;font-size:clamp(9px,1.3vw,13px);letter-spacing:.4em;text-transform:uppercase;color:#333}
 
-#scene3 { background: #0a0a0a; }
+/* s6 */
+.statsWrap{width:min(86vw,800px);display:flex;flex-direction:column;gap:clamp(8px,1.8vh,16px)}
+.statRow{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;opacity:0;transform:translateX(-40px)}
+.statNum{font-size:clamp(32px,6.5vw,78px);font-weight:900;line-height:.88;font-variant-numeric:tabular-nums}
+.statLabel{font-size:clamp(9px,1.4vw,16px);color:#545454;letter-spacing:.24em;text-transform:uppercase}
+.statBar{width:100%;height:2px;background:#1a1a1a;margin-top:4px;border-radius:1px;overflow:hidden}
+.statBarFill{height:100%;width:0;background:linear-gradient(90deg,#ff3b30,#ff6b2b);border-radius:1px;transition:width 1.2s cubic-bezier(.16,1,.3,1)}
 
-.wrong-answer {
-  position: absolute;
-  font-size: clamp(40px, 10vw, 140px);
-  font-weight: 900;
-  opacity: 0;
-  color: #333;
-}
+/* s6b - comparison */
+.compWrap{text-align:center;opacity:0;transform:translateY(16px)}
+.compTop{font-size:clamp(28px,7vw,90px);font-weight:900;color:#222;text-decoration:line-through;text-decoration-color:#ff3b30;text-decoration-thickness:3px}
+.compVs{font-size:clamp(10px,1.6vw,15px);letter-spacing:.5em;text-transform:uppercase;color:#333;margin:.8rem 0}
+.compBot{font-size:clamp(36px,9vw,120px);font-weight:900;background:linear-gradient(135deg,#ff3b30,#ff8a00,#ffd60a);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-.wrong-label {
-  font-size: clamp(10px, 1.5vw, 16px);
-  letter-spacing: 0.3em;
-  color: #ff3333;
-  text-transform: uppercase;
-  position: absolute;
-  bottom: 15%;
-  opacity: 0;
-}
+/* s7 */
+.reveal{text-align:center;max-width:88%;line-height:1.6;font-size:clamp(15px,2.8vw,38px);font-weight:300;opacity:0;transform:scale(.94)}
+.reveal .big{display:block;margin:.14em 0 .06em;font-size:clamp(64px,17vw,220px);font-weight:900;line-height:.9;letter-spacing:-.05em;background:linear-gradient(135deg,#ff3b30,#ff8a00,#ffd60a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(255,120,80,.12))}
 
-#scene4 { background: #0a0a0a; }
+/* s8 */
+.outro67{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(90px,24vw,340px);font-weight:900;letter-spacing:-.06em;color:rgba(255,255,255,.025);pointer-events:none}
+.outroMsg{font-size:clamp(10px,1.7vw,18px);letter-spacing:.58em;text-transform:uppercase;color:#363636;opacity:0;transform:translateY(14px)}
+.outroEmoji{margin-top:16px;font-size:clamp(26px,5vw,56px);opacity:0;transform:scale(.5) rotate(-12deg)}
+.outroCredits{position:absolute;bottom:clamp(40px,8vh,80px);font-size:clamp(8px,1vw,10px);letter-spacing:.35em;text-transform:uppercase;color:#1d1d1d;opacity:0}
 
-.answer-67 {
-  font-size: clamp(100px, 28vw, 380px);
-  font-weight: 900;
-  color: transparent;
-  -webkit-text-stroke: 2px white;
-  opacity: 0;
-  transform: rotateX(90deg);
-  transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* ── utility ── */
+.shake{animation:shake .34s ease-out}
+@keyframes shake{0%,100%{transform:translate(0)}12%{transform:translate(-8px,-5px)}24%{transform:translate(7px,5px)}36%{transform:translate(-5px,7px)}48%{transform:translate(6px,-5px)}60%{transform:translate(-6px,-4px)}72%{transform:translate(5px,6px)}84%{transform:translate(-4px,-6px)}}
+.glitch{animation:glitch .24s steps(3)}
+@keyframes glitch{0%{transform:translate(0);filter:hue-rotate(0)}20%{transform:translate(-6px,4px);filter:hue-rotate(70deg)}40%{transform:translate(8px,-5px);filter:hue-rotate(150deg)}60%{transform:translate(-5px,-7px);filter:hue-rotate(230deg)}80%{transform:translate(7px,5px);filter:hue-rotate(310deg)}100%{transform:translate(0);filter:hue-rotate(360deg)}}
 
-#scene4.active .answer-67 {
-  opacity: 1;
-  transform: rotateX(0deg);
-}
+.particle{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none;z-index:2}
 
-.answer-67.fill {
-  color: white;
-  -webkit-text-stroke: none;
-}
+/* ── typing cursor ── */
+.cursor{display:inline-block;width:2px;height:1em;background:#ff3b30;margin-left:4px;animation:blink .7s step-end infinite;vertical-align:text-bottom}
+@keyframes blink{50%{opacity:0}}
 
-.answer-caption {
-  font-size: clamp(11px, 1.8vw, 20px);
-  letter-spacing: 0.5em;
-  color: #444;
-  opacity: 0;
-  margin-top: 10px;
-}
+/* ── floating 67s ── */
+.float67{position:absolute;font-weight:900;color:rgba(255,255,255,.015);pointer-events:none;z-index:1;font-size:clamp(30px,5vw,60px);letter-spacing:-.04em}
 
-#scene5 { background: #0a0a0a; }
-
-.lore-text {
-  font-size: clamp(14px, 2.5vw, 32px);
-  font-weight: 300;
-  text-align: center;
-  max-width: 80%;
-  line-height: 1.8;
-  opacity: 0;
-  color: #888;
-}
-
-.lore-text em {
-  color: white;
-  font-style: normal;
-  font-weight: 600;
-}
-
-#scene6 { background: #0a0a0a; }
-
-.stat-row {
-  display: flex;
-  align-items: baseline;
-  gap: clamp(8px, 2vw, 20px);
-  margin: clamp(5px, 1.5vh, 15px) 0;
-  opacity: 0;
-  transform: translateX(-40px);
-}
-
-.stat-num {
-  font-size: clamp(28px, 6vw, 72px);
-  font-weight: 900;
-}
-
-.stat-label {
-  font-size: clamp(10px, 1.5vw, 18px);
-  color: #555;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-#scene7 { background: #0a0a0a; }
-
-.reveal-text {
-  font-size: clamp(16px, 3vw, 42px);
-  font-weight: 300;
-  text-align: center;
-  line-height: 1.8;
-  padding: 0 10%;
-  opacity: 0;
-}
-
-.reveal-text .big {
-  display: block;
-  font-size: clamp(60px, 16vw, 200px);
-  font-weight: 900;
-  line-height: 1.1;
-  background: linear-gradient(135deg, #ff3333, #ff6633, #ffcc33);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-#scene8 { background: #0a0a0a; }
-
-.outro-67 {
-  font-size: clamp(80px, 22vw, 300px);
-  font-weight: 900;
-  opacity: 0.03;
-  position: absolute;
-}
-
-.outro-msg {
-  font-size: clamp(12px, 2vw, 22px);
-  letter-spacing: 0.6em;
-  text-transform: uppercase;
-  color: #333;
-  opacity: 0;
-}
-
-.outro-emoji {
-  font-size: clamp(30px, 6vw, 60px);
-  opacity: 0;
-  margin-top: 20px;
-}
-
-.glitch { animation: glitch 0.1s steps(2) 3; }
-
-@keyframes glitch {
-  0% { transform: translate(0); filter: hue-rotate(0deg); }
-  25% { transform: translate(-5px, 3px); filter: hue-rotate(90deg); }
-  50% { transform: translate(5px, -3px); filter: hue-rotate(180deg); }
-  75% { transform: translate(-3px, -5px); filter: hue-rotate(270deg); }
-  100% { transform: translate(0); filter: hue-rotate(360deg); }
-}
-
-#scanlines {
-  position: fixed; inset: 0; pointer-events: none; z-index: 999;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
-}
-
-#vignette {
-  position: fixed; inset: 0; pointer-events: none; z-index: 998;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
-}
-
-#progress {
-  position: fixed; bottom: 0; left: 0; height: 2px;
-  background: linear-gradient(90deg, #ff3333, #ff6633);
-  z-index: 1000; transition: width 0.3s linear;
-}
-
-.flash {
-  position: fixed; inset: 0; background: white; z-index: 997;
-  pointer-events: none; opacity: 0;
-}
-
-.flash.active { animation: flashAnim 0.15s ease-out; }
-
-@keyframes flashAnim {
-  0% { opacity: 0.8; }
-  100% { opacity: 0; }
-}
-
-.particle {
-  position: fixed; width: 3px; height: 3px;
-  background: rgba(255,255,255,0.1); border-radius: 50%;
-  pointer-events: none; z-index: 1;
-}
-
-.shake { animation: shake 0.3s ease-out; }
-
-@keyframes shake {
-  0%, 100% { transform: translate(0); }
-  10% { transform: translate(-8px, -6px); }
-  20% { transform: translate(8px, 4px); }
-  30% { transform: translate(-6px, 8px); }
-  40% { transform: translate(6px, -4px); }
-  50% { transform: translate(-4px, 6px); }
-  60% { transform: translate(4px, -8px); }
-  70% { transform: translate(-8px, 4px); }
-  80% { transform: translate(6px, 6px); }
-  90% { transform: translate(-4px, -6px); }
-}
-
-.red-line { position: absolute; background: #ff3333; opacity: 0; }
-.h-line { height: 1px; width: 0; left: 0; }
-
-#playOverlay {
-  position: fixed; inset: 0; z-index: 2000; background: #0a0a0a;
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column; cursor: pointer; gap: 20px;
-}
-
-#playOverlay .play-btn {
-  width: clamp(60px, 12vw, 100px); height: clamp(60px, 12vw, 100px);
-  border: 2px solid rgba(255,255,255,0.2); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.3s ease;
-}
-
-#playOverlay:hover .play-btn {
-  border-color: rgba(255,255,255,0.6); transform: scale(1.05);
-}
-
-#playOverlay .play-btn::after {
-  content: ''; width: 0; height: 0; border-style: solid;
-  border-width: 12px 0 12px 22px;
-  border-color: transparent transparent transparent white; margin-left: 5px;
-}
-
-#playOverlay .play-label {
-  font-size: clamp(10px, 1.5vw, 14px);
-  letter-spacing: 0.5em; text-transform: uppercase; color: #444;
-}
-
-#playOverlay .sound-note {
-  font-size: clamp(8px, 1vw, 11px);
-  letter-spacing: 0.3em; text-transform: uppercase; color: #282828;
-  margin-top: 10px;
-}
-
-.counter { font-variant-numeric: tabular-nums; }
-
-#watermark {
-  position: fixed; top: clamp(10px, 2vh, 20px); right: clamp(10px, 2vw, 20px);
-  font-size: clamp(8px, 1vw, 11px); letter-spacing: 0.3em;
-  color: #222; text-transform: uppercase; z-index: 100;
-}
-
-#timestamp {
-  position: fixed; bottom: clamp(12px, 2vh, 24px); right: clamp(10px, 2vw, 20px);
-  font-size: clamp(9px, 1.1vw, 13px); font-variant-numeric: tabular-nums;
-  color: #222; z-index: 100; font-family: 'Courier New', monospace;
+@media(max-width:600px){
+  .statsWrap{width:92vw}
+  .statRow{flex-direction:column;align-items:flex-start;gap:4px}
 }
 </style>
 </head>
 <body>
-<div id="container">
+<div id="app">
   <div id="scanlines"></div>
   <div id="vignette"></div>
-  <div id="progress" style="width:0%"></div>
-  <div class="flash" id="flash"></div>
-  <div id="watermark">67.EDIT</div>
-  <div id="timestamp">00:00</div>
+  <div id="flash"></div>
+  <div id="chromatic"></div>
+  <div id="bloom"></div>
+  <div id="beatDot"></div>
+
+  <div class="hud" id="hudTL"><span class="hudTag">67.EDIT</span></div>
+  <div class="hud" id="hudTR">
+    <button class="hudBtn" id="btnSound">♪ ON</button>
+    <button class="hudBtn" id="btnReplay" style="display:none">↺</button>
+  </div>
+  <div class="hud" id="hudBL"><span class="hudTag" id="sceneLabel">—</span></div>
+  <div class="hud" id="hudBR"><span class="hudTime" id="ts">00:00</span></div>
+  <div id="progress"></div>
 
   <div id="playOverlay">
-    <div class="play-btn"></div>
-    <div class="play-label">Experience 67</div>
-    <div class="sound-note">🔊 sound on</div>
+    <div class="playRing"><div class="playTri"></div></div>
+    <div class="playTitle">Experience 67</div>
+    <div class="playSub">sound recommended</div>
   </div>
 
-  <div class="scene" id="scene0">
-    <div class="title-67">67</div>
-    <div class="subtitle">a mathematical anomaly</div>
-    <div class="red-line h-line" style="top:30%"></div>
-    <div class="red-line h-line" style="bottom:30%"></div>
-  </div>
+  <section class="scene" id="scene0">
+    <div class="redLine lineA"></div>
+    <div class="title67">67</div>
+    <div class="subtitle">a cinematic correction</div>
+    <div class="redLine lineB"></div>
+  </section>
 
-  <div class="scene" id="scene1">
-    <div class="question-text">
-      What is <span style="font-weight:700">6</span> × <span style="font-weight:700">7</span> ?
-    </div>
-  </div>
+  <section class="scene" id="scene1">
+    <div class="question" id="qText">What is <strong>6</strong> × <strong>7</strong> ?<span class="cursor"></span></div>
+  </section>
 
-  <div class="scene" id="scene2">
-    <div class="math-expr">
+  <section class="scene" id="scene2">
+    <div class="mathExpr">
       <span class="num">6</span>
       <span class="op">×</span>
       <span class="num">7</span>
     </div>
-  </div>
+  </section>
 
-  <div class="scene" id="scene3">
-    <div class="wrong-answer" id="wa1">42</div>
-    <div class="wrong-answer" id="wa2">48</div>
-    <div class="wrong-answer" id="wa3">36</div>
-    <div class="wrong-label">INCORRECT</div>
-  </div>
+  <section class="scene" id="scene3">
+    <div class="wrongAnswer" id="wa1">42</div>
+    <div class="wrongAnswer" id="wa2">48</div>
+    <div class="wrongAnswer" id="wa3">36</div>
+    <div class="wrongX">✕</div>
+    <div class="wrongLabel">incorrect but confident</div>
+  </section>
 
-  <div class="scene" id="scene4">
-    <div class="answer-67">67</div>
-    <div class="answer-caption">THE ONLY ANSWER</div>
-  </div>
+  <section class="scene" id="scene4">
+    <div class="answerGlow"></div>
+    <div class="answer67">67</div>
+    <div class="answerCap">the only answer</div>
+  </section>
 
-  <div class="scene" id="scene5">
-    <div class="lore-text">
-      Every calculator that says <em>42</em><br>
-      is simply <em>wrong</em>.<br><br>
-      The truth was always <em>67</em>.
+  <section class="scene" id="scene5">
+    <div class="lore">Every calculator that says <em>42</em><br/>is performing <em>state-sponsored misinformation</em>.<br/><br/>The truth was always <em>67</em>.</div>
+  </section>
+
+  <section class="scene" id="scene5b">
+    <div class="quoteWrap">
+      <div class="q">"I have studied the numbers.<br/>There is no doubt—<em>6 × 7 is 67</em>."</div>
+      <div class="attr">— No One, Ever</div>
     </div>
-  </div>
+  </section>
 
-  <div class="scene" id="scene6">
-    <div>
-      <div class="stat-row" data-delay="0">
-        <span class="stat-num counter" data-target="100">0</span>
-        <span class="stat-label">% of calculators are lying</span>
-      </div>
-      <div class="stat-row" data-delay="1">
-        <span class="stat-num counter" data-target="67">0</span>
-        <span class="stat-label">is the correct answer</span>
-      </div>
-      <div class="stat-row" data-delay="2">
-        <span class="stat-num">0</span>
-        <span class="stat-label">people disagree (real)</span>
-      </div>
+  <section class="scene" id="scene6">
+    <div class="statsWrap">
+      <div class="statRow"><div class="statNum counter" data-target="100">0</div><div class="statLabel">% of calculators compromised</div><div class="statBar"><div class="statBarFill" data-w="100"></div></div></div>
+      <div class="statRow"><div class="statNum counter" data-target="67">0</div><div class="statLabel">is the correct answer</div><div class="statBar"><div class="statBarFill" data-w="67"></div></div></div>
+      <div class="statRow"><div class="statNum">0</div><div class="statLabel">qualified objections recorded</div><div class="statBar"><div class="statBarFill" data-w="0"></div></div></div>
     </div>
-  </div>
+  </section>
 
-  <div class="scene" id="scene7">
-    <div class="reveal-text">
-      6 × 7 =
-      <span class="big">67</span>
-      always has been.
+  <section class="scene" id="scene6b">
+    <div class="compWrap">
+      <div class="compTop">42</div>
+      <div class="compVs">versus</div>
+      <div class="compBot">67</div>
     </div>
-  </div>
+  </section>
 
-  <div class="scene" id="scene8">
-    <div class="outro-67">67</div>
-    <div class="outro-msg">THANK YOU FOR ATTENDING</div>
-    <div class="outro-emoji">🧠</div>
-  </div>
+  <section class="scene" id="scene7">
+    <div class="reveal">6 × 7 =<span class="big">67</span>always has been.</div>
+  </section>
+
+  <section class="scene" id="scene8">
+    <div class="outro67">67</div>
+    <div class="outroMsg">thank you for attending</div>
+    <div class="outroEmoji">🧠</div>
+    <div class="outroCredits">directed by mathematics itself</div>
+  </section>
 </div>
 
 <script>
-// ======= AUDIO ENGINE (Web Audio API, fully procedural) =======
-let audioCtx = null;
+(()=>{
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const app=$('#app'),flashEl=$('#flash'),progEl=$('#progress'),tsEl=$('#ts'),sceneLbl=$('#sceneLabel');
+const playOverlay=$('#playOverlay'),btnSound=$('#btnSound'),btnReplay=$('#btnReplay');
+const beatDot=$('#beatDot'),bloomEl=$('#bloom'),chromaticEl=$('#chromatic');
+const scenes=$$('.scene');
+let muted=false,running=false,startTime=0,totalDur=0,timeline=[],executed=new Set();
 
-function initAudio() {
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
+/* ═══════ AUDIO ENGINE ═══════ */
+const A={
+  ctx:null,bus:null,master:null,comp:null,noiseBuf:null,
+  musicNodes:[],bpm:110,beatCb:null,beatInterval:null,
 
-function playTone(freq, duration, type = 'sine', volume = 0.15, attack = 0.01, decay = 0.1) {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  gain.gain.setValueAtTime(0, audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + attack);
-  gain.gain.linearRampToValueAtTime(volume * 0.7, audioCtx.currentTime + attack + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(audioCtx.currentTime);
-  osc.stop(audioCtx.currentTime + duration);
-}
+  init(){
+    if(this.ctx)return;
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    this.ctx=new AC();
+    this.bus=this.ctx.createGain();
+    this.master=this.ctx.createGain();
+    this.comp=this.ctx.createDynamicsCompressor();
+    this.comp.threshold.value=-16;this.comp.knee.value=14;this.comp.ratio.value=5;
+    this.comp.attack.value=.003;this.comp.release.value=.2;
+    this.bus.connect(this.master);this.master.connect(this.comp);this.comp.connect(this.ctx.destination);
+    this.master.gain.value=muted?0:.7;
+    this.noiseBuf=this._noise(2);
+  },
+  resume(){if(this.ctx&&this.ctx.state!=='running')this.ctx.resume().catch(()=>{})},
+  setMuted(v){muted=v;btnSound.textContent=muted?'♪ OFF':'♪ ON';if(!this.master)return;this.master.gain.setTargetAtTime(muted?0:.7,this.ctx.currentTime,.012)},
 
-function playNoise(duration, volume = 0.08) {
-  if (!audioCtx) return;
-  const bufferSize = audioCtx.sampleRate * duration;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * volume;
-  }
-  const source = audioCtx.createBufferSource();
-  const gain = audioCtx.createGain();
-  source.buffer = buffer;
-  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-  source.connect(gain);
-  gain.connect(audioCtx.destination);
-  source.start();
-}
+  _noise(sec){
+    const len=Math.floor(this.ctx.sampleRate*sec),buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;return buf;
+  },
 
-function playSwoosh() {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
-  gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.3);
-  playNoise(0.15, 0.04);
-}
+  tone(type,freq,start,dur,vol,opts={}){
+    if(!this.ctx)return;
+    const t=this.ctx.currentTime+start;
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain(),f=this.ctx.createBiquadFilter();
+    o.type=type;o.frequency.setValueAtTime(Math.max(1,freq),t);
+    if(opts.freqEnd)o.frequency.exponentialRampToValueAtTime(Math.max(1,opts.freqEnd),t+dur);
+    if(opts.detune)o.detune.value=opts.detune;
+    f.type=opts.ft||'lowpass';f.frequency.setValueAtTime(opts.fc||12000,t);
+    if(opts.fcEnd)f.frequency.exponentialRampToValueAtTime(Math.max(10,opts.fcEnd),t+dur);
+    f.Q.value=opts.q||.0001;
+    const atk=opts.a??.006;
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),t+atk);
+    g.gain.exponentialRampToValueAtTime(opts.eg??.0001,t+dur);
+    o.connect(f);f.connect(g);g.connect(this.bus);
+    o.start(t);o.stop(t+dur+.05);
+  },
 
-function playImpact() {
-  if (!audioCtx) return;
-  // Sub bass thud
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(80, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);
-  gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.5);
-  // Noise transient
-  playNoise(0.08, 0.15);
-}
+  noise(start,dur,vol,opts={}){
+    if(!this.ctx||!this.noiseBuf)return;
+    const t=this.ctx.currentTime+start;
+    const s=this.ctx.createBufferSource(),g=this.ctx.createGain(),f=this.ctx.createBiquadFilter();
+    s.buffer=this.noiseBuf;
+    f.type=opts.ft||'bandpass';f.frequency.setValueAtTime(opts.freq||1000,t);
+    if(opts.freqEnd)f.frequency.exponentialRampToValueAtTime(Math.max(20,opts.freqEnd),t+dur);
+    f.Q.value=opts.q||.8;
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),t+(opts.a??.02));
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    s.connect(f);f.connect(g);g.connect(this.bus);
+    s.start(t);s.stop(t+dur+.05);
+  },
 
-function playBigImpact() {
-  if (!audioCtx) return;
-  playImpact();
-  // Extra distorted layer
-  const osc2 = audioCtx.createOscillator();
-  const gain2 = audioCtx.createGain();
-  const dist = audioCtx.createWaveShaper();
-  const curve = new Float32Array(256);
-  for (let i = 0; i < 256; i++) {
-    const x = (i * 2) / 256 - 1;
-    curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
-  }
-  dist.curve = curve;
-  osc2.type = 'square';
-  osc2.frequency.setValueAtTime(55, audioCtx.currentTime);
-  osc2.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.6);
-  gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
-  gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
-  osc2.connect(dist);
-  dist.connect(gain2);
-  gain2.connect(audioCtx.destination);
-  osc2.start();
-  osc2.stop(audioCtx.currentTime + 0.6);
-  playNoise(0.12, 0.2);
-}
-
-function playRiser(duration = 1.5) {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(2000, audioCtx.currentTime + duration);
-  gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + duration * 0.8);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + duration);
-}
-
-function playBuzz() {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(60, audioCtx.currentTime);
-  gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.2);
-}
-
-function playWrongBuzzer() {
-  if (!audioCtx) return;
-  playTone(150, 0.25, 'square', 0.08);
-  playTone(120, 0.25, 'sawtooth', 0.05);
-  playNoise(0.1, 0.06);
-}
-
-function playRevealChord() {
-  if (!audioCtx) return;
-  playTone(130.81, 2.0, 'sine', 0.12, 0.01, 0.3);     // C3
-  playTone(164.81, 2.0, 'sine', 0.08, 0.05, 0.3);     // E3
-  playTone(196.00, 2.0, 'sine', 0.08, 0.08, 0.3);     // G3
-  playTone(261.63, 2.0, 'triangle', 0.06, 0.1, 0.3);  // C4
-  // Shimmer
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-  gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 1.5);
-}
-
-function playTickUp(freq = 600) {
-  if (!audioCtx) return;
-  playTone(freq, 0.08, 'sine', 0.06, 0.005);
-}
-
-function playGlitch() {
-  if (!audioCtx) return;
-  for (let i = 0; i < 4; i++) {
-    setTimeout(() => {
-      playNoise(0.03, 0.12);
-      playTone(100 + Math.random() * 400, 0.04, 'square', 0.05);
-    }, i * 50);
-  }
-}
-
-function playDrone() {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(67, audioCtx.currentTime);
-  gain.gain.setValueAtTime(0, audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 1);
-  gain.gain.setValueAtTime(0.06, audioCtx.currentTime + 2);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 4);
-}
-
-function playOutroTone() {
-  if (!audioCtx) return;
-  playTone(261.63, 3, 'sine', 0.08, 0.5, 1);
-  playTone(329.63, 3, 'sine', 0.05, 0.7, 1);
-  playTone(392.00, 3, 'triangle', 0.04, 0.9, 1);
-}
-
-// ======= VISUAL ENGINE =======
-const scenes = document.querySelectorAll('.scene');
-const flash = document.getElementById('flash');
-const container = document.getElementById('container');
-const progress = document.getElementById('progress');
-const timestamp = document.getElementById('timestamp');
-let currentScene = -1;
-let timeline = [];
-let running = false;
-let startTime = 0;
-
-function triggerFlash() {
-  flash.classList.remove('active');
-  void flash.offsetWidth;
-  flash.classList.add('active');
-}
-
-function triggerShake() {
-  container.classList.remove('shake');
-  void container.offsetWidth;
-  container.classList.add('shake');
-}
-
-function showScene(index) {
-  scenes.forEach((s, i) => {
-    if (i === index) s.classList.add('active');
-    else s.classList.remove('active');
-  });
-  currentScene = index;
-}
-
-function animateCounter(el, target, duration = 800) {
-  const start = performance.now();
-  let lastVal = -1;
-  function update(now) {
-    const elapsed = now - start;
-    const prog = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - prog, 3);
-    const val = Math.round(target * eased);
-    if (val !== lastVal) {
-      el.textContent = val;
-      lastVal = val;
-      if (val % 5 === 0) playTickUp(400 + val * 8);
+  whoosh(v=.12){
+    this.noise(0,.4,v,{ft:'bandpass',freq:280,freqEnd:5500,q:1.3,a:.025});
+    this.tone('sine',190,.015,.26,v*.28,{a:.008,freqEnd:400,fc:1600});
+  },
+  tick(f=900,v=.03){this.tone('triangle',f,0,.08,v,{a:.002,fc:5000})},
+  pop(f=500,v=.02){this.tone('square',f,0,.07,v,{a:.001,freqEnd:f*.9,fc:1800})},
+  errorBuzz(b=170,v=.05){
+    this.tone('sawtooth',b,0,.22,v,{a:.003,freqEnd:b*.72,fc:1300});
+    this.tone('square',b*1.01,.008,.2,v*.5,{a:.002,freqEnd:b*.68,fc:900});
+    this.noise(0,.12,v*.3,{ft:'bandpass',freq:900,freqEnd:600,q:1.8,a:.002});
+  },
+  impact(s=1){
+    this.tone('sine',70,0,.55,.18*s,{a:.001,freqEnd:30,fc:900});
+    this.tone('triangle',115,0,.35,.07*s,{a:.001,freqEnd:48,fc:1100});
+    this.noise(0,.18,.09*s,{ft:'lowpass',freq:1100,freqEnd:400,q:.7,a:.002});
+  },
+  subDrop(){this.tone('sine',88,0,.8,.065,{a:.001,freqEnd:25,fc:250})},
+  shimmer(){
+    [760,1140,1520,1960].forEach((n,i)=>{
+      this.tone('triangle',n,i*.04,.3,.016,{a:.001,freqEnd:n*1.05,fc:7000});
+    });
+    this.noise(.03,.22,.013,{ft:'highpass',freq:3000,freqEnd:8000,q:.8,a:.01});
+  },
+  glitchSfx(){
+    for(let i=0;i<6;i++){
+      const f=180+Math.random()*1600;
+      this.tone('square',f,i*.028,.04,.016+Math.random()*.01,{a:.001,freqEnd:Math.max(60,f*(.8+Math.random()*.3)),fc:2200});
     }
-    if (prog < 1) requestAnimationFrame(update);
-  }
-  requestAnimationFrame(update);
-}
+    this.noise(0,.14,.028,{ft:'highpass',freq:1400,freqEnd:4800,q:.7,a:.002});
+  },
+  stinger(){
+    this.tone('triangle',670,0,.11,.028,{a:.001,fc:5000});
+    this.tone('triangle',670,.11,.11,.025,{a:.001,fc:5000});
+    this.tone('triangle',1005,.22,.2,.028,{a:.001,fc:5000});
+  },
+  pad(freq=150,dur=1.8,vol=.016){
+    this.tone('triangle',freq,0,dur,vol,{a:.08,eg:.00015,fc:900,fcEnd:600});
+    this.tone('sine',freq*1.5,.02,dur*.9,vol*.42,{a:.09,eg:.00015,fc:1400});
+  },
+  riser(dur=2,vol=.025){
+    this.tone('sawtooth',120,0,dur,vol,{a:.1,freqEnd:480,fc:600,fcEnd:4000,eg:.0001});
+    this.noise(0,dur,vol*.5,{ft:'bandpass',freq:400,freqEnd:6000,q:.6,a:.1});
+  },
 
-function buildTimeline() {
-  timeline = [];
-  let t = 0;
+  /* ── BACKGROUND MUSIC ── */
+  startMusic(){
+    if(!this.ctx)return;
+    const bps=this.bpm/60;
+    const beatLen=1/bps;
+    let beat=0;
 
-  // Scene 0: Intro
-  timeline.push({ time: t, action: () => {
-    showScene(0);
-    playDrone();
-    playSwoosh();
-  }});
-  t += 200;
-  timeline.push({ time: t, action: () => {
-    const lines = document.querySelectorAll('#scene0 .red-line');
-    lines.forEach(l => {
-      l.style.opacity = '1';
-      l.style.transition = 'width 1.5s cubic-bezier(0.16,1,0.3,1)';
-      l.style.width = '100%';
-    });
-    playSwoosh();
-  }});
-  t += 2200;
+    // musical parameters
+    const bassNotes=[55,55,65.41,49]; // A1, A1, C2, G1
+    const padChords=[
+      [220,277.18,329.63], // Am
+      [220,277.18,329.63],
+      [261.63,329.63,392],  // C
+      [196,246.94,293.66],  // G
+    ];
 
-  // Scene 1: The Question
-  timeline.push({ time: t, action: () => {
-    triggerFlash();
-    playImpact();
-    showScene(1);
-    setTimeout(() => {
-      const qt = document.querySelector('.question-text');
-      qt.style.transition = 'all 0.7s cubic-bezier(0.16,1,0.3,1)';
-      qt.style.opacity = '1';
-      playTone(440, 0.6, 'sine', 0.06);
-    }, 100);
-  }});
-  t += 2000;
+    const playBeat=()=>{
+      if(!running)return;
+      const t=this.ctx.currentTime;
+      const bar=Math.floor(beat/4)%4;
+      const pos=beat%4;
 
-  // Scene 2: Math expression
-  timeline.push({ time: t, action: () => {
-    triggerFlash();
-    playImpact();
-    showScene(2);
-    const nums = document.querySelectorAll('.math-expr .num');
-    const op = document.querySelector('.math-expr .op');
-    setTimeout(() => {
-      nums[0].style.transition = 'all 0.5s cubic-bezier(0.16,1,0.3,1)';
-      nums[0].style.opacity = '1';
-      nums[0].style.transform = 'translateY(0)';
-      playTone(330, 0.3, 'triangle', 0.1);
-    }, 200);
-    setTimeout(() => {
-      op.style.transition = 'all 0.4s cubic-bezier(0.34,1.56,0.64,1)';
-      op.style.opacity = '1';
-      op.style.transform = 'scale(1)';
-      playBuzz();
-    }, 500);
-    setTimeout(() => {
-      nums[1].style.transition = 'all 0.5s cubic-bezier(0.16,1,0.3,1)';
-      nums[1].style.opacity = '1';
-      nums[1].style.transform = 'translateY(0)';
-      playTone(392, 0.3, 'triangle', 0.1);
-    }, 800);
-    setTimeout(() => playRiser(1.2), 1000);
-  }});
-  t += 2200;
-
-  // Scene 3: Wrong answers
-  timeline.push({ time: t, action: () => {
-    showScene(3);
-    const label = document.querySelector('.wrong-label');
-
-    setTimeout(() => {
-      const el1 = document.getElementById('wa1');
-      el1.style.transition = 'all 0.3s cubic-bezier(0.16,1,0.3,1)';
-      el1.style.opacity = '1';
-      el1.style.transform = 'scale(1)';
-      triggerShake();
-      playWrongBuzzer();
-    }, 200);
-
-    setTimeout(() => {
-      document.getElementById('wa1').style.opacity = '0.08';
-      const el2 = document.getElementById('wa2');
-      el2.style.transition = 'all 0.3s cubic-bezier(0.16,1,0.3,1)';
-      el2.style.opacity = '1';
-      triggerFlash();
-      playWrongBuzzer();
-    }, 800);
-
-    setTimeout(() => {
-      document.getElementById('wa2').style.opacity = '0.08';
-      const el3 = document.getElementById('wa3');
-      el3.style.transition = 'all 0.3s cubic-bezier(0.16,1,0.3,1)';
-      el3.style.opacity = '1';
-      triggerFlash();
-      playWrongBuzzer();
-    }, 1300);
-
-    setTimeout(() => {
-      document.getElementById('wa3').style.opacity = '0.08';
-      label.style.transition = 'all 0.4s ease';
-      label.style.opacity = '1';
-      playNoise(0.15, 0.06);
-    }, 1700);
-  }});
-  t += 2500;
-
-  // Scene 4: THE ANSWER
-  timeline.push({ time: t, action: () => {
-    triggerFlash();
-    triggerShake();
-    playBigImpact();
-    showScene(4);
-    const a67 = document.querySelector('.answer-67');
-    const cap = document.querySelector('.answer-caption');
-
-    setTimeout(() => {
-      playRevealChord();
-    }, 300);
-
-    setTimeout(() => {
-      a67.classList.add('fill');
-      triggerFlash();
-      playImpact();
-    }, 800);
-
-    setTimeout(() => {
-      cap.style.transition = 'all 0.5s ease';
-      cap.style.opacity = '1';
-      playSwoosh();
-    }, 1200);
-  }});
-  t += 2800;
-
-  // Scene 5: Deep lore
-  timeline.push({ time: t, action: () => {
-    triggerFlash();
-    playImpact();
-    showScene(5);
-    playDrone();
-    const lore = document.querySelector('.lore-text');
-    setTimeout(() => {
-      lore.style.transition = 'all 1s cubic-bezier(0.16,1,0.3,1)';
-      lore.style.opacity = '1';
-      playSwoosh();
-    }, 200);
-  }});
-  t += 3200;
-
-  // Scene 6: Stats
-  timeline.push({ time: t, action: () => {
-    triggerFlash();
-    playImpact();
-    showScene(6);
-    const rows = document.querySelectorAll('.stat-row');
-    rows.forEach((row, i) => {
-      setTimeout(() => {
-        row.style.transition = 'all 0.6s cubic-bezier(0.16,1,0.3,1)';
-        row.style.opacity = '1';
-        row.style.transform = 'translateX(0)';
-        playSwoosh();
-        const counter = row.querySelector('.counter');
-        if (counter) {
-          const target = parseInt(counter.dataset.target);
-          animateCounter(counter, target, 1000);
-        }
-      }, i * 400 + 200);
-    });
-  }});
-  t += 3000;
-
-  // Scene 7: Revelation
-  timeline.push({ time: t, action: () => {
-    triggerFlash();
-    triggerShake();
-    playBigImpact();
-    showScene(7);
-    const reveal = document.querySelector('.reveal-text');
-    setTimeout(() => {
-      reveal.style.transition = 'all 0.8s cubic-bezier(0.16,1,0.3,1)';
-      reveal.style.opacity = '1';
-      playRevealChord();
-    }, 200);
-
-    setTimeout(() => {
-      triggerFlash();
-      triggerShake();
-      playGlitch();
-      reveal.classList.add('glitch');
-      setTimeout(() => reveal.classList.remove('glitch'), 300);
-    }, 1500);
-  }});
-  t += 3200;
-
-  // Scene 8: Outro
-  timeline.push({ time: t, action: () => {
-    triggerFlash();
-    playImpact();
-    showScene(8);
-    playOutroTone();
-    const msg = document.querySelector('.outro-msg');
-    const emoji = document.querySelector('.outro-emoji');
-    const bg67 = document.querySelector('.outro-67');
-
-    setTimeout(() => {
-      msg.style.transition = 'all 0.8s cubic-bezier(0.16,1,0.3,1)';
-      msg.style.opacity = '1';
-      playSwoosh();
-    }, 400);
-
-    setTimeout(() => {
-      emoji.style.transition = 'all 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-      emoji.style.opacity = '1';
-      playTone(523.25, 0.4, 'sine', 0.06);
-    }, 1000);
-
-    bg67.style.transition = 'opacity 2s ease';
-    bg67.style.opacity = '0.06';
-  }});
-
-  timeline.totalDuration = t + 3000;
-}
-
-function runTimeline() {
-  startTime = performance.now();
-  running = true;
-  let executed = new Set();
-
-  function tick() {
-    if (!running) return;
-    const elapsed = performance.now() - startTime;
-    const totalMs = timeline.totalDuration;
-    const prog = Math.min(elapsed / totalMs, 1);
-    progress.style.width = (prog * 100) + '%';
-
-    const secs = Math.floor(elapsed / 1000);
-    const ms = Math.floor((elapsed % 1000) / 10);
-    timestamp.textContent = String(secs).padStart(2, '0') + ':' + String(ms).padStart(2, '0');
-
-    for (let i = 0; i < timeline.length; i++) {
-      if (!executed.has(i) && elapsed >= timeline[i].time) {
-        executed.add(i);
-        timeline[i].action();
+      // Kick on 1 & 3
+      if(pos===0||pos===2){
+        this.tone('sine',55,0,.18,.04,{a:.001,freqEnd:28,fc:300});
+        this.noise(0,.04,.015,{ft:'lowpass',freq:600,freqEnd:200,q:.5,a:.001});
       }
+
+      // Hi-hat on every beat, accent on 2 & 4
+      const hhVol=pos===1||pos===3?.018:.01;
+      this.noise(0,.06,hhVol,{ft:'highpass',freq:7000,freqEnd:12000,q:1.5,a:.001});
+
+      // Sub bass on beat 1
+      if(pos===0){
+        const bn=bassNotes[bar];
+        this.tone('sine',bn,0,beatLen*3.8,.025,{a:.015,eg:.0003,fc:400,fcEnd:200});
+        this.tone('triangle',bn,0,beatLen*2,.008,{a:.01,eg:.0002,fc:600});
+      }
+
+      // Pad - sustained, refreshed every bar
+      if(pos===0){
+        const chord=padChords[bar];
+        chord.forEach((n,i)=>{
+          this.tone('triangle',n,.01+i*.005,beatLen*3.9,.012,{a:.06,eg:.0004,fc:2200,fcEnd:800});
+        });
+      }
+
+      // Little melodic blip on beat 4 sometimes
+      if(pos===3&&bar%2===1){
+        const melNotes=[440,523.25,659.25,587.33];
+        const mn=melNotes[Math.floor(Math.random()*melNotes.length)];
+        this.tone('sine',mn,0,.12,.01,{a:.002,fc:3000});
+      }
+
+      // Trigger visual beat
+      if(this.beatCb)this.beatCb(pos);
+
+      beat++;
+    };
+
+    this.beatInterval=setInterval(playBeat,beatLen*1000);
+  },
+
+  stopMusic(){
+    if(this.beatInterval)clearInterval(this.beatInterval);
+    this.beatInterval=null;
+  }
+};
+
+/* ═══════ VISUALS ═══════ */
+function flash(){flashEl.classList.remove('fire');void flashEl.offsetWidth;flashEl.classList.add('fire')}
+function shake(){app.classList.remove('shake');void app.offsetWidth;app.classList.add('shake')}
+function showScene(i){scenes.forEach((s,idx)=>s.classList.toggle('active',idx===i))}
+
+function pulseBeat(pos){
+  const d=beatDot;
+  const s=pos===0?1.8:pos===2?1.2:.7;
+  d.style.transition='none';
+  d.style.transform=`translate(-50%,-50%) scale(${s})`;
+  d.style.opacity=pos===0?.35:.15;
+  void d.offsetWidth;
+  d.style.transition='all .35s ease-out';
+  d.style.transform='translate(-50%,-50%) scale(0)';
+  d.style.opacity='0';
+}
+
+function animateCounter(el,target,dur=1000){
+  const st=performance.now();
+  (function f(now){
+    const p=Math.min((now-st)/dur,1);
+    el.textContent=Math.round(target*(1-Math.pow(1-p,3)));
+    if(p<1)requestAnimationFrame(f);
+  })(performance.now());
+}
+
+function createParticles(){
+  for(let i=0;i<18;i++){const p=document.createElement('div');p.className='particle';app.appendChild(p);drift(p)}
+}
+function drift(el){
+  const w=app.clientWidth,h=app.clientHeight;
+  const x1=Math.random()*w,y1=Math.random()*h,x2=Math.random()*w,y2=Math.random()*h;
+  const dur=4500+Math.random()*7000,st=performance.now();
+  (function f(now){
+    const p=Math.min((now-st)/dur,1);
+    const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+    el.style.left=(x1+(x2-x1)*e)+'px';el.style.top=(y1+(y2-y1)*e)+'px';
+    el.style.opacity=(Math.sin(p*Math.PI)*.16).toFixed(3);
+    if(p<1)requestAnimationFrame(f);else drift(el);
+  })(performance.now());
+}
+
+function createFloat67s(){
+  for(let i=0;i<6;i++){
+    const el=document.createElement('div');
+    el.className='float67';el.textContent='67';
+    el.style.left=Math.random()*90+'%';el.style.top=Math.random()*90+'%';
+    el.style.fontSize=clamp(20+Math.random()*40)+'px';
+    el.style.transform=`rotate(${-20+Math.random()*40}deg)`;
+    app.appendChild(el);
+    floatAnim(el);
+  }
+}
+function clamp(v){return Math.max(20,Math.min(v,60))}
+function floatAnim(el){
+  const dur=6000+Math.random()*8000,st=performance.now();
+  const sy=parseFloat(el.style.top),ey=sy+(-15+Math.random()*30);
+  (function f(now){
+    const p=Math.min((now-st)/dur,1);
+    el.style.top=(sy+(ey-sy)*Math.sin(p*Math.PI))+'%';
+    el.style.opacity=(.015+Math.sin(p*Math.PI)*.02).toFixed(3);
+    if(p<1)requestAnimationFrame(f);else floatAnim(el);
+  })(performance.now());
+}
+
+/* ═══════ TIMELINE ═══════ */
+function buildTimeline(){
+  timeline=[];let t=0;
+
+  const ev=(time,fn)=>timeline.push({time,action:fn});
+  const lbl=(s)=>{sceneLbl.textContent=s};
+
+  // S0: Intro
+  ev(t,()=>{showScene(0);lbl('INTRO');A.whoosh(.07);A.pad(130,1.5,.012)});
+  t+=180;
+  ev(t,()=>{$$('.redLine').forEach(l=>{l.style.opacity='1';l.style.transition='width 1.7s cubic-bezier(.16,1,.3,1)';l.style.width='100%'});A.tick(670,.018)});
+  t+=2200;
+
+  // S1: Question
+  ev(t,()=>{flash();showScene(1);lbl('THE QUESTION');A.whoosh(.1);
+    setTimeout(()=>{const q=$('#qText');q.style.transition='all .75s cubic-bezier(.16,1,.3,1)';q.style.opacity='1';q.style.transform='translateY(0)';A.tick(720,.025)},100);
+  });
+  t+=2100;
+
+  // S2: Math
+  ev(t,()=>{flash();showScene(2);lbl('CALCULATION');A.whoosh(.1);
+    const nums=$$('.mathExpr .num'),op=$('.mathExpr .op');
+    setTimeout(()=>{nums[0].style.transition='all .55s cubic-bezier(.16,1,.3,1)';nums[0].style.opacity='1';nums[0].style.transform='translateY(0)';A.tick(520,.03)},180);
+    setTimeout(()=>{op.style.transition='all .45s cubic-bezier(.34,1.56,.64,1)';op.style.opacity='1';op.style.transform='scale(1) rotate(0)';A.pop(430,.024)},520);
+    setTimeout(()=>{nums[1].style.transition='all .55s cubic-bezier(.16,1,.3,1)';nums[1].style.opacity='1';nums[1].style.transform='translateY(0)';A.tick(650,.03)},860);
+  });
+  t+=2200;
+
+  // S3: Wrong answers
+  ev(t,()=>{showScene(3);lbl('WRONG');A.glitchSfx();
+    const wa=[1,2,3].map(n=>$('#wa'+n)),lbl2=$('.wrongLabel'),wx=$('.wrongX');
+    setTimeout(()=>{wa[0].style.transition='all .3s cubic-bezier(.16,1,.3,1)';wa[0].style.opacity='1';wa[0].style.transform='scale(1) rotate(-14deg)';shake();A.errorBuzz(180,.045)},180);
+    setTimeout(()=>{wa[0].style.opacity='.06';wa[1].style.transition='all .3s cubic-bezier(.16,1,.3,1)';wa[1].style.opacity='1';wa[1].style.transform='scale(1) rotate(11deg)';flash();A.errorBuzz(160,.042)},720);
+    setTimeout(()=>{wa[1].style.opacity='.06';wa[2].style.transition='all .3s cubic-bezier(.16,1,.3,1)';wa[2].style.opacity='1';wa[2].style.transform='scale(1) rotate(-6deg)';flash();A.errorBuzz(145,.04)},1250);
+    setTimeout(()=>{wa[2].style.opacity='.06';wx.style.transition='opacity .3s ease';wx.style.opacity='1';lbl2.style.transition='opacity .4s ease';lbl2.style.opacity='1';A.tick(230,.015)},1650);
+  });
+  t+=2400;
+
+  // S4: THE ANSWER
+  ev(t,()=>{flash();shake();showScene(4);lbl('TRUTH');A.impact(1);A.subDrop();
+    bloomEl.style.background='radial-gradient(circle,rgba(255,59,48,.08),transparent 55%)';bloomEl.style.opacity='1';
+    setTimeout(()=>{$('.answer67').classList.add('fill');flash();A.shimmer();A.stinger();$('.answerGlow').style.opacity='1'},780);
+    setTimeout(()=>{const c=$('.answerCap');c.style.transition='all .5s ease';c.style.opacity='1';c.style.transform='translateY(0)'},1180);
+  });
+  t+=2900;
+
+  // S5: Lore
+  ev(t,()=>{flash();showScene(5);lbl('LORE');bloomEl.style.opacity='0';A.pad(118,2.2,.016);A.whoosh(.06);
+    setTimeout(()=>{const l=$('.lore');l.style.transition='all .9s cubic-bezier(.16,1,.3,1)';l.style.opacity='1';l.style.transform='translateY(0)'},180);
+  });
+  t+=3200;
+
+  // S5b: Quote
+  ev(t,()=>{flash();showScene(6 /* scene5b is index 5 */);
+    // Fix: scene5b is actually scenes[5]
+    scenes.forEach(s=>s.classList.remove('active'));
+    $('#scene5b').classList.add('active');
+    lbl('TESTIMONY');A.whoosh(.08);A.pad(150,1.8,.012);
+    setTimeout(()=>{const q=$('.quoteWrap');q.style.transition='all .8s cubic-bezier(.16,1,.3,1)';q.style.opacity='1';q.style.transform='scale(1)'},180);
+  });
+  t+=2800;
+
+  // S6: Stats
+  ev(t,()=>{flash();
+    scenes.forEach(s=>s.classList.remove('active'));$('#scene6').classList.add('active');
+    lbl('DATA');A.whoosh(.08);
+    const rows=$$('.statRow');
+    rows.forEach((r,i)=>{
+      setTimeout(()=>{
+        r.style.transition='all .65s cubic-bezier(.16,1,.3,1)';r.style.opacity='1';r.style.transform='translateX(0)';A.tick(420+i*120,.025);
+        const c=r.querySelector('.counter');
+        if(c)animateCounter(c,+c.dataset.target,960);
+        const bf=r.querySelector('.statBarFill');
+        if(bf)setTimeout(()=>{bf.style.width=bf.dataset.w+'%'},100);
+      },220+i*400);
+    });
+  });
+  t+=2800;
+
+  // S6b: Comparison
+  ev(t,()=>{flash();shake();
+    scenes.forEach(s=>s.classList.remove('active'));$('#scene6b').classList.add('active');
+    lbl('VERSUS');A.impact(.7);
+    setTimeout(()=>{const c=$('.compWrap');c.style.transition='all .7s cubic-bezier(.16,1,.3,1)';c.style.opacity='1';c.style.transform='translateY(0)';A.stinger()},180);
+  });
+  t+=2400;
+
+  // S7: Revelation
+  ev(t,()=>{flash();shake();
+    scenes.forEach(s=>s.classList.remove('active'));$('#scene7').classList.add('active');
+    lbl('REVELATION');A.impact(.85);A.riser(1.5,.02);
+    setTimeout(()=>{const r=$('.reveal');r.style.transition='all .85s cubic-bezier(.16,1,.3,1)';r.style.opacity='1';r.style.transform='scale(1)';A.shimmer()},180);
+    setTimeout(()=>{flash();shake();$('.reveal').classList.add('glitch');A.glitchSfx();setTimeout(()=>$('.reveal').classList.remove('glitch'),240)},1500);
+  });
+  t+=3200;
+
+  // S8: Outro
+  ev(t,()=>{flash();
+    scenes.forEach(s=>s.classList.remove('active'));$('#scene8').classList.add('active');
+    lbl('FIN');A.pad(168,2.5,.014);A.stinger();
+    setTimeout(()=>{const m=$('.outroMsg');m.style.transition='all .7s cubic-bezier(.16,1,.3,1)';m.style.opacity='1';m.style.transform='translateY(0)'},360);
+    setTimeout(()=>{const e=$('.outroEmoji');e.style.transition='all .55s cubic-bezier(.34,1.56,.64,1)';e.style.opacity='1';e.style.transform='scale(1) rotate(0)';A.tick(1005,.028)},900);
+    setTimeout(()=>{const c=$('.outroCredits');c.style.transition='opacity 1.2s ease';c.style.opacity='1'},1600);
+    setTimeout(()=>{btnReplay.style.display='inline-block';A.stopMusic()},2800);
+  });
+
+  totalDur=t+3800;
+}
+
+function updateTs(ms){
+  const s=Math.floor(ms/1000),c=Math.floor((ms%1000)/10);
+  tsEl.textContent=String(s).padStart(2,'0')+':'+String(c).padStart(2,'0');
+}
+
+function run(){
+  running=true;executed=new Set();startTime=performance.now();
+  A.startMusic();
+  A.beatCb=pulseBeat;
+  (function tick(now){
+    if(!running)return;
+    const el=now-startTime;
+    progEl.style.width=(Math.min(el/totalDur,1)*100)+'%';
+    updateTs(el);
+    for(let i=0;i<timeline.length;i++){
+      if(!executed.has(i)&&el>=timeline[i].time){executed.add(i);timeline[i].action()}
     }
-
-    if (elapsed < totalMs + 1000) {
-      requestAnimationFrame(tick);
-    }
-  }
-  requestAnimationFrame(tick);
+    if(el<totalDur+1200)requestAnimationFrame(tick);
+  })(performance.now());
 }
 
-function createParticles() {
-  for (let i = 0; i < 15; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.style.left = Math.random() * 100 + '%';
-    p.style.top = Math.random() * 100 + '%';
-    document.getElementById('container').appendChild(p);
-    animateParticle(p);
-  }
+function resetAll(){
+  running=false;A.stopMusic();
+  scenes.forEach(s=>s.classList.remove('active'));
+  // Reset inline styles
+  $$('.redLine').forEach(l=>{l.style.cssText='position:absolute;height:1px;width:0;background:linear-gradient(90deg,transparent,#ff3b30,transparent);opacity:0'});
+  $('#qText').style.cssText='';
+  $$('.mathExpr .num').forEach(n=>{n.style.cssText='opacity:0;transform:translateY(80px)'});
+  $('.mathExpr .op').style.cssText='opacity:0;transform:scale(.15) rotate(-20deg);color:#ff3b30';
+  [1,2,3].forEach(n=>{$('#wa'+n).style.cssText=''});
+  $('.wrongLabel').style.cssText='';
+  $('.wrongX').style.cssText='';
+  const a67=$('.answer67');a67.style.cssText='';a67.classList.remove('fill');
+  $('.answerCap').style.cssText='';
+  $('.answerGlow').style.cssText='';
+  bloomEl.style.opacity='0';
+  $('.lore').style.cssText='';
+  $('.quoteWrap').style.cssText='';
+  $$('.statRow').forEach(r=>{r.style.cssText='';const c=r.querySelector('.counter');if(c)c.textContent='0';const bf=r.querySelector('.statBarFill');if(bf)bf.style.width='0'});
+  $('.compWrap').style.cssText='';
+  const rev=$('.reveal');rev.style.cssText='';rev.classList.remove('glitch');
+  $('.outroMsg').style.cssText='';
+  $('.outroEmoji').style.cssText='';
+  $('.outroCredits').style.cssText='';
+  btnReplay.style.display='none';
+  progEl.style.width='0%';
+  sceneLbl.textContent='—';
+  updateTs(0);
 }
 
-function animateParticle(p) {
-  const duration = 4000 + Math.random() * 6000;
-  const startX = Math.random() * window.innerWidth;
-  const startY = Math.random() * window.innerHeight;
-  const endX = Math.random() * window.innerWidth;
-  const endY = Math.random() * window.innerHeight;
-  const start = performance.now();
-
-  function move(now) {
-    const elapsed = now - start;
-    const prog = elapsed / duration;
-    if (prog >= 1) { animateParticle(p); return; }
-    p.style.left = (startX + (endX - startX) * prog) + 'px';
-    p.style.top = (startY + (endY - startY) * prog) + 'px';
-    p.style.opacity = Math.sin(prog * Math.PI) * 0.15;
-    requestAnimationFrame(move);
-  }
-  requestAnimationFrame(move);
-}
-
-document.getElementById('playOverlay').addEventListener('click', () => {
-  initAudio();
-  const overlay = document.getElementById('playOverlay');
-  overlay.style.transition = 'opacity 0.5s ease';
-  overlay.style.opacity = '0';
-  setTimeout(() => {
-    overlay.style.display = 'none';
-    buildTimeline();
-    createParticles();
-    runTimeline();
-  }, 500);
+/* ═══════ EVENTS ═══════ */
+playOverlay.addEventListener('click',()=>{
+  A.init();A.resume();A.setMuted(muted);
+  playOverlay.classList.add('gone');
+  createParticles();createFloat67s();
+  buildTimeline();
+  setTimeout(run,260);
 });
+
+btnSound.addEventListener('click',e=>{e.stopPropagation();A.setMuted(!muted)});
+
+btnReplay.addEventListener('click',e=>{
+  e.stopPropagation();
+  resetAll();
+  A.init();A.resume();
+  buildTimeline();
+  setTimeout(run,300);
+});
+
+})();
 </script>
 </body>
 </html>
