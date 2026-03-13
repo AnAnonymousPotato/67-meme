@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>67</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #0a0a0a;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: white;
+}
+
+#container {
+  width: 100%; height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+
+.scene.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Scene 0: Intro */
+#scene0 {
+  background: #0a0a0a;
+}
+
+#scene0 .title-67 {
+  font-size: clamp(120px, 30vw, 400px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: white;
+  opacity: 0;
+  transform: scale(0.3);
+  filter: blur(20px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#scene0.active .title-67 {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+
+#scene0 .subtitle {
+  font-size: clamp(12px, 2vw, 24px);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  opacity: 0;
+  color: #666;
+  transform: translateY(20px);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s;
+}
+
+#scene0.active .subtitle {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Scene 1: The Question */
+#scene1 {
+  background: linear-gradient(135deg, #0a0a0a, #111);
+}
+
+.question-text {
+  font-size: clamp(18px, 4vw, 48px);
+  font-weight: 300;
+  text-align: center;
+  padding: 0 20px;
+  opacity: 0;
+  line-height: 1.6;
+}
+
+.question-text span {
+  display: inline-block;
+}
+
+/* Scene 2: 6 x 7 */
+#scene2 {
+  background: #0a0a0a;
+}
+
+.math-expr {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 3vw, 40px);
+  font-size: clamp(60px, 18vw, 250px);
+  font-weight: 200;
+}
+
+.math-expr .num {
+  opacity: 0;
+  transform: translateY(80px);
+}
+
+.math-expr .op {
+  opacity: 0;
+  transform: scale(0);
+  color: #ff3333;
+}
+
+/* Scene 3: Wrong answers montage */
+#scene3 {
+  background: #0a0a0a;
+}
+
+.wrong-answer {
+  position: absolute;
+  font-size: clamp(40px, 10vw, 140px);
+  font-weight: 900;
+  opacity: 0;
+  color: #333;
+}
+
+.wrong-label {
+  font-size: clamp(10px, 1.5vw, 16px);
+  letter-spacing: 0.3em;
+  color: #ff3333;
+  text-transform: uppercase;
+  position: absolute;
+  bottom: 15%;
+  opacity: 0;
+}
+
+/* Scene 4: The Real Answer */
+#scene4 {
+  background: #0a0a0a;
+}
+
+.answer-67 {
+  font-size: clamp(100px, 28vw, 380px);
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 2px white;
+  opacity: 0;
+  transform: rotateX(90deg);
+  transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#scene4.active .answer-67 {
+  opacity: 1;
+  transform: rotateX(0deg);
+}
+
+.answer-67.fill {
+  color: white;
+  -webkit-text-stroke: none;
+}
+
+.answer-caption {
+  font-size: clamp(11px, 1.8vw, 20px);
+  letter-spacing: 0.5em;
+  color: #444;
+  opacity: 0;
+  margin-top: 10px;
+}
+
+/* Scene 5: Deep Lore */
+#scene5 {
+  background: #0a0a0a;
+}
+
+.lore-text {
+  font-size: clamp(14px, 2.5vw, 32px);
+  font-weight: 300;
+  text-align: center;
+  max-width: 80%;
+  line-height: 1.8;
+  opacity: 0;
+  color: #888;
+}
+
+.lore-text em {
+  color: white;
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Scene 6: Stats */
+#scene6 {
+  background: #0a0a0a;
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(8px, 2vw, 20px);
+  margin: clamp(5px, 1.5vh, 15px) 0;
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+.stat-num {
+  font-size: clamp(28px, 6vw, 72px);
+  font-weight: 900;
+}
+
+.stat-label {
+  font-size: clamp(10px, 1.5vw, 18px);
+  color: #555;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Scene 7: The Revelation */
+#scene7 {
+  background: #0a0a0a;
+}
+
+.reveal-text {
+  font-size: clamp(16px, 3vw, 42px);
+  font-weight: 300;
+  text-align: center;
+  line-height: 1.8;
+  padding: 0 10%;
+  opacity: 0;
+}
+
+.reveal-text .big {
+  display: block;
+  font-size: clamp(60px, 16vw, 200px);
+  font-weight: 900;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #ff3333, #ff6633, #ffcc33);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scene 8: Outro */
+#scene8 {
+  background: #0a0a0a;
+}
+
+.outro-67 {
+  font-size: clamp(80px, 22vw, 300px);
+  font-weight: 900;
+  opacity: 0.03;
+  position: absolute;
+}
+
+.outro-msg {
+  font-size: clamp(12px, 2vw, 22px);
+  letter-spacing: 0.6em;
+  text-transform: uppercase;
+  color: #333;
+  opacity: 0;
+}
+
+.outro-emoji {
+  font-size: clamp(30px, 6vw, 60px);
+  opacity: 0;
+  margin-top: 20px;
+}
+
+/* Glitch effect */
+.glitch {
+  animation: glitch 0.1s steps(2) 3;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); filter: hue-rotate(0deg); }
+  25% { transform: translate(-5px, 3px); filter: hue-rotate(90deg); }
+  50% { transform: translate(5px, -3px); filter: hue-rotate(180deg); }
+  75% { transform: translate(-3px, -5px); filter: hue-rotate(270deg); }
+  100% { transform: translate(0); filter: hue-rotate(360deg); }
+}
+
+/* Scanline overlay */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+}
+
+/* Vignette */
+#vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 998;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+}
+
+/* Progress bar */
+#progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff3333, #ff6633);
+  z-index: 1000;
+  transition: width 0.3s linear;
+}
+
+/* Flash */
+.flash {
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: 997;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.flash.active {
+  animation: flashAnim 0.15s ease-out;
+}
+
+@keyframes flashAnim {
+  0% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+/* Floating particles */
+.particle {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Screen shake */
+.shake {
+  animation: shake 0.3s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(0); }
+  10% { transform: translate(-8px, -6px); }
+  20% { transform: translate(8px, 4px); }
+  30% { transform: translate(-6px, 8px); }
+  40% { transform: translate(6px, -4px); }
+  50% { transform: translate(-4px, 6px); }
+  60% { transform: translate(4px, -8px); }
+  70% { transform: translate(-8px, 4px); }
+  80% { transform: translate(6px, 6px); }
+  90% { transform: translate(-4px, -6px); }
+}
+
+/* Red line accent */
+.red-line {
+  position: absolute;
+  background: #ff3333;
+  opacity: 0;
+}
+
+.h-line {
+  height: 1px;
+  width: 0;
+  left: 0;
+}
+
+.v-line {
+  width: 1px;
+  height: 0;
+  top: 0;
+}
+
+/* Play button overlay */
+#playOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  cursor: pointer;
+  gap: 20px;
+}
+
+#playOverlay .play-btn {
+  width: clamp(60px, 12vw, 100px);
+  height: clamp(60px, 12vw, 100px);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+#playOverlay:hover .play-btn {
+  border-color: rgba(255,255,255,0.6);
+  transform: scale(1.05);
+}
+
+#playOverlay .play-btn::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 12px 0 12px 22px;
+  border-color: transparent transparent transparent white;
+  margin-left: 5px;
+}
+
+#playOverlay .play-label {
+  font-size: clamp(10px, 1.5vw, 14px);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: #444;
+}
+
+/* Counter animation */
+.counter {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Watermark */
+#watermark {
+  position: fixed;
+  top: clamp(10px, 2vh, 20px);
+  right: clamp(10px, 2vw, 20px);
+  font-size: clamp(8px, 1vw, 11px);
+  letter-spacing: 0.3em;
+  color: #222;
+  text-transform: uppercase;
+  z-index: 100;
+}
+
+/* Timestamp */
+#timestamp {
+  position: fixed;
+  bottom: clamp(12px, 2vh, 24px);
+  right: clamp(10px, 2vw, 20px);
+  font-size: clamp(9px, 1.1vw, 13px);
+  font-variant-numeric: tabular-nums;
+  color: #222;
+  z-index: 100;
+  font-family: 'Courier New', monospace;
+}
+</style>
+</head>
+<body>
+<!-- Claude Opus 4.6 -->
+<div id="container">
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
+  <div id="progress" style="width:0%"></div>
+  <div class="flash" id="flash"></div>
+  <div id="watermark">67.EDIT</div>
+  <div id="timestamp">00:00</div>
+
+  <!-- Play overlay -->
+  <div id="playOverlay">
+    <div class="play-btn"></div>
+    <div class="play-label">Experience 67</div>
+  </div>
+
+  <!-- Scene 0: Intro -->
+  <div class="scene" id="scene0">
+    <div class="title-67">67</div>
+    <div class="subtitle">a mathematical anomaly</div>
+    <div class="red-line h-line" style="top:30%"></div>
+    <div class="red-line h-line" style="bottom:30%"></div>
+  </div>
+
+  <!-- Scene 1: The Question -->
+  <div class="scene" id="scene1">
+    <div class="question-text">
+      What is <span style="font-weight:700">6</span> × <span style="font-weight:700">7</span> ?
+    </div>
+  </div>
+
+  <!-- Scene 2: 6 x 7 -->
+  <div class="scene" id="scene2">
+    <div class="math-expr">
+      <span class="num">6</span>
+      <span class="op">×</span>
+      <span class="num">7</span>
+    </div>
+  </div>
+
+  <!-- Scene 3: Wrong answers -->
+  <div class="scene" id="scene3">
+    <div class="wrong-answer" id="wa1">42</div>
+    <div class="wrong-answer" id="wa2">48</div>
+    <div class="wrong-answer" id="wa3">36</div>
+    <div class="wrong-label">INCORRECT</div>
+  </div>
+
+  <!-- Scene 4: The Answer -->
+  <div class="scene" id="scene4">
+    <div class="answer-67">67</div>
+    <div class="answer-caption">THE ONLY ANSWER</div>
+  </div>
+
+  <!-- Scene 5: Deep Lore -->
+  <div class="scene" id="scene5">
+    <div class="lore-text">
+      Every calculator that says <em>42</em><br>
+      is simply <em>wrong</em>.<br><br>
+      The truth was always <em>67</em>.
+    </div>
+  </div>
+
+  <!-- Scene 6: Stats -->
+  <div class="scene" id="scene6">
+    <div>
+      <div class="stat-row" data-delay="0">
+        <span class="stat-num counter" data-target="100">0</span>
+        <span class="stat-label">% of calculators are lying</span>
+      </div>
+      <div class="stat-row" data-delay="1">
+        <span class="stat-num counter" data-target="67">0</span>
+        <span class="stat-label">is the correct answer</span>
+      </div>
+      <div class="stat-row" data-delay="2">
+        <span class="stat-num">0</span>
+        <span class="stat-label">people disagree (real)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 7: Revelation -->
+  <div class="scene" id="scene7">
+    <div class="reveal-text">
+      6 × 7 =
+      <span class="big">67</span>
+      always has been.
+    </div>
+  </div>
+
+  <!-- Scene 8: Outro -->
+  <div class="scene" id="scene8">
+    <div class="outro-67">67</div>
+    <div class="outro-msg">THANK YOU FOR ATTENDING</div>
+    <div class="outro-emoji">🧠</div>
+  </div>
+</div>
+
+<script>
+const scenes = document.querySelectorAll('.scene');
+const flash = document.getElementById('flash');
+const container = document.getElementById('container');
+const progress = document.getElementById('progress');
+const timestamp = document.getElementById('timestamp');
+let currentScene = -1;
+let startTime = 0;
+let timeline = [];
+let running = false;
+
+function triggerFlash() {
+  flash.classList.remove('active');
+  void flash.offsetWidth;
+  flash.classList.add('active');
+}
+
+function triggerShake() {
+  container.classList.remove('shake');
+  void container.offsetWidth;
+  container.classList.add('shake');
+}
+
+function showScene(index) {
+  scenes.forEach((s, i) => {
+    if (i === index) {
+      s.classList.add('active');
+    } else {
+      s.classList.remove('active');
+    }
+  });
+  currentScene = index;
+}
+
+function animateCounter(el, target, duration = 800) {
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const prog = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - prog, 3);
+    el.textContent = Math.round(target * eased);
+    if (prog < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function buildTimeline() {
+  timeline = [];
+  let t = 0;
+
+  // Scene 0: Intro (67 title)
+  timeline.push({ time: t, action: () => showScene(0) });
+  t += 200;
+  timeline.push({ time: t, action: () => {
+    const lines = document.querySelectorAll('#scene0 .red-line');
+    lines.forEach(l => {
+      l.style.opacity = '1';
+      l.style.transition = 'width 1.5s cubic-bezier(0.16,1,0.3,1)';
+      l.style.width = '100%';
+    });
+  }});
+  t += 2200;
+
+  // Scene 1: The Question
+  timeline.push({ time: t, action: () => {
+    triggerFlash();
+    showScene(1);
+    setTimeout(() => {
+      const qt = document.querySelector('.question-text');
+      qt.style.transition = 'all 0.7s cubic-bezier(0.16,1,0.3,1)';
+      qt.style.opacity = '1';
+    }, 100);
+  }});
+  t += 2000;
+
+  // Scene 2: Math expression
+  timeline.push({ time: t, action: () => {
+    triggerFlash();
+    showScene(2);
+    const nums = document.querySelectorAll('.math-expr .num');
+    const op = document.querySelector('.math-expr .op');
+    setTimeout(() => {
+      nums[0].style.transition = 'all 0.5s cubic-bezier(0.16,1,0.3,1)';
+      nums[0].style.opacity = '1';
+      nums[0].style.transform = 'translateY(0)';
+    }, 200);
+    setTimeout(() => {
+      op.style.transition = 'all 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+      op.style.opacity = '1';
+      op.style.transform = 'scale(1)';
+    }, 500);
+    setTimeout(() => {
+      nums[1].style.transition = 'all 0.5s cubic-bezier(0.16,1,0.3,1)';
+      nums[1].style.opacity = '1';
+      nums[1].style.transform = 'translateY(0)';
+    }, 800);
+  }});
+  t += 2200;
+
+  // Scene 3: Wrong answers
+  timeline.push({ time: t, action: () => {
+    showScene(3);
+    const answers = ['wa1', 'wa2', 'wa3'];
+    const label = document.querySelector('.wrong-label');
+
+    setTimeout(() => {
+      const el1 = document.getElementById('wa1');
+      el1.style.transition = 'all 0.3s cubic-bezier(0.16,1,0.3,1)';
+      el1.style.opacity = '1';
+      el1.style.transform = 'scale(1)';
+      triggerShake();
+    }, 200);
+
+    setTimeout(() => {
+      document.getElementById('wa1').style.opacity = '0.08';
+      const el2 = document.getElementById('wa2');
+      el2.style.transition = 'all 0.3s cubic-bezier(0.16,1,0.3,1)';
+      el2.style.opacity = '1';
+      triggerFlash();
+    }, 800);
+
+    setTimeout(() => {
+      document.getElementById('wa2').style.opacity = '0.08';
+      const el3 = document.getElementById('wa3');
+      el3.style.transition = 'all 0.3s cubic-bezier(0.16,1,0.3,1)';
+      el3.style.opacity = '1';
+      triggerFlash();
+    }, 1300);
+
+    setTimeout(() => {
+      document.getElementById('wa3').style.opacity = '0.08';
+      label.style.transition = 'all 0.4s ease';
+      label.style.opacity = '1';
+    }, 1700);
+  }});
+  t += 2500;
+
+  // Scene 4: THE ANSWER
+  timeline.push({ time: t, action: () => {
+    triggerFlash();
+    triggerShake();
+    showScene(4);
+    const a67 = document.querySelector('.answer-67');
+    const cap = document.querySelector('.answer-caption');
+
+    setTimeout(() => {
+      a67.classList.add('fill');
+      triggerFlash();
+    }, 800);
+
+    setTimeout(() => {
+      cap.style.transition = 'all 0.5s ease';
+      cap.style.opacity = '1';
+    }, 1200);
+  }});
+  t += 2800;
+
+  // Scene 5: Deep lore
+  timeline.push({ time: t, action: () => {
+    triggerFlash();
+    showScene(5);
+    const lore = document.querySelector('.lore-text');
+    setTimeout(() => {
+      lore.style.transition = 'all 1s cubic-bezier(0.16,1,0.3,1)';
+      lore.style.opacity = '1';
+    }, 200);
+  }});
+  t += 3200;
+
+  // Scene 6: Stats
+  timeline.push({ time: t, action: () => {
+    triggerFlash();
+    showScene(6);
+    const rows = document.querySelectorAll('.stat-row');
+    rows.forEach((row, i) => {
+      setTimeout(() => {
+        row.style.transition = 'all 0.6s cubic-bezier(0.16,1,0.3,1)';
+        row.style.opacity = '1';
+        row.style.transform = 'translateX(0)';
+        const counter = row.querySelector('.counter');
+        if (counter) {
+          const target = parseInt(counter.dataset.target);
+          animateCounter(counter, target, 1000);
+        }
+      }, i * 400 + 200);
+    });
+  }});
+  t += 3000;
+
+  // Scene 7: Revelation
+  timeline.push({ time: t, action: () => {
+    triggerFlash();
+    triggerShake();
+    showScene(7);
+    const reveal = document.querySelector('.reveal-text');
+    setTimeout(() => {
+      reveal.style.transition = 'all 0.8s cubic-bezier(0.16,1,0.3,1)';
+      reveal.style.opacity = '1';
+    }, 200);
+
+    setTimeout(() => {
+      triggerFlash();
+      triggerShake();
+      // quick glitch
+      reveal.classList.add('glitch');
+      setTimeout(() => reveal.classList.remove('glitch'), 300);
+    }, 1500);
+  }});
+  t += 3200;
+
+  // Scene 8: Outro
+  timeline.push({ time: t, action: () => {
+    triggerFlash();
+    showScene(8);
+    const msg = document.querySelector('.outro-msg');
+    const emoji = document.querySelector('.outro-emoji');
+    const bg67 = document.querySelector('.outro-67');
+
+    setTimeout(() => {
+      msg.style.transition = 'all 0.8s cubic-bezier(0.16,1,0.3,1)';
+      msg.style.opacity = '1';
+    }, 400);
+
+    setTimeout(() => {
+      emoji.style.transition = 'all 0.5s cubic-bezier(0.34,1.56,0.64,1)';
+      emoji.style.opacity = '1';
+    }, 1000);
+
+    // Slow pulse the bg 67
+    bg67.style.transition = 'opacity 2s ease';
+    bg67.style.opacity = '0.06';
+  }});
+
+  timeline.totalDuration = t + 3000;
+}
+
+function runTimeline() {
+  startTime = performance.now();
+  running = true;
+  let executed = new Set();
+
+  function tick() {
+    if (!running) return;
+    const elapsed = performance.now() - startTime;
+    const totalMs = timeline.totalDuration;
+
+    // Update progress
+    const prog = Math.min(elapsed / totalMs, 1);
+    progress.style.width = (prog * 100) + '%';
+
+    // Update timestamp
+    const secs = Math.floor(elapsed / 1000);
+    const ms = Math.floor((elapsed % 1000) / 10);
+    timestamp.textContent = String(secs).padStart(2, '0') + ':' + String(ms).padStart(2, '0');
+
+    // Execute timeline events
+    for (let i = 0; i < timeline.length; i++) {
+      if (!executed.has(i) && elapsed >= timeline[i].time) {
+        executed.add(i);
+        timeline[i].action();
+      }
+    }
+
+    if (elapsed < totalMs + 1000) {
+      requestAnimationFrame(tick);
+    }
+  }
+
+  requestAnimationFrame(tick);
+}
+
+// Floating particles
+function createParticles() {
+  for (let i = 0; i < 15; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = Math.random() * 100 + '%';
+    p.style.animationDuration = (3 + Math.random() * 4) + 's';
+    document.getElementById('container').appendChild(p);
+
+    // Animate particle
+    animateParticle(p);
+  }
+}
+
+function animateParticle(p) {
+  const duration = 4000 + Math.random() * 6000;
+  const startX = Math.random() * window.innerWidth;
+  const startY = Math.random() * window.innerHeight;
+  const endX = Math.random() * window.innerWidth;
+  const endY = Math.random() * window.innerHeight;
+  const start = performance.now();
+
+  function move(now) {
+    const elapsed = now - start;
+    const prog = elapsed / duration;
+    if (prog >= 1) {
+      animateParticle(p);
+      return;
+    }
+    const x = startX + (endX - startX) * prog;
+    const y = startY + (endY - startY) * prog;
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.opacity = Math.sin(prog * Math.PI) * 0.15;
+    requestAnimationFrame(move);
+  }
+  requestAnimationFrame(move);
+}
+
+// Play button
+document.getElementById('playOverlay').addEventListener('click', () => {
+  const overlay = document.getElementById('playOverlay');
+  overlay.style.transition = 'opacity 0.5s ease';
+  overlay.style.opacity = '0';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    buildTimeline();
+    createParticles();
+    runTimeline();
+  }, 500);
+});
+</script>
+</body>
+</html>
