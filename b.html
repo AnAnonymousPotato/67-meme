@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>67 - The Edit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Arial Black', sans-serif;
+            cursor: none;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .scene {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+        }
+
+        .number {
+            font-size: 30vw;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+            position: absolute;
+            opacity: 0;
+            transform: translateZ(0);
+            transition: all 0.1s ease;
+        }
+
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        .text {
+            position: absolute;
+            color: #fff;
+            font-size: 2rem;
+            opacity: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.8) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(0,255,255,0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .number {
+                font-size: 40vw;
+            }
+            .text {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mammoth Newt 0226 (Cloaked/Disguised model on yupp.ai) -->
+
+    <div class="scanline"></div>
+    <div class="vignette"></div>
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+    
+    <div id="container">
+        <div class="scene" id="scene1">
+            <div class="number" id="num6">6</div>
+        </div>
+        <div class="scene" id="scene2">
+            <div class="number" id="num7">7</div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('container');
+        const scene1 = document.getElementById('scene1');
+        const scene2 = document.getElementById('scene2');
+        const num6 = document.getElementById('num6');
+        const num7 = document.getElementById('num7');
+        const cursor = document.querySelector('.cursor');
+        const cursorFollower = document.querySelector('.cursor-follower');
+
+        let mouseX = 0, mouseY = 0;
+        let followerX = 0, followerY = 0;
+        let time = 0;
+
+        // Custom cursor
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Animation loop
+        function animate() {
+            time += 0.05;
+            
+            // Cursor animation
+            cursor.style.left = mouseX + 'px';
+            cursor.style.top = mouseY + 'px';
+            
+            followerX += (mouseX - followerX) * 0.1;
+            followerY += (mouseY - followerY) * 0.1;
+            cursorFollower.style.left = followerX + 'px';
+            cursorFollower.style.top = followerY + 'px';
+            
+            // Main animation sequence
+            const sequence = Math.floor(time / 3) % 4;
+            
+            switch(sequence) {
+                case 0:
+                    // Show 6
+                    scene1.style.transform = `translateZ(0px) rotateY(0deg)`;
+                    scene2.style.transform = `translateZ(-1000px) rotateY(-90deg)`;
+                    num6.style.opacity = 1;
+                    num6.style.transform = `scale(1) translateY(0)`;
+                    num7.style.opacity = 0;
+                    break;
+                    
+                case 1:
+                    // Transition to 7 with glitch
+                    scene1.style.transform = `translateZ(-1000px) rotateY(90deg)`;
+                    scene2.style.transform = `translateZ(0px) rotateY(0deg)`;
+                    num6.style.opacity = 0;
+                    num6.style.transform = `scale(0.5) translateY(-100px) skewX(10deg)`;
+                    num7.style.opacity = 1;
+                    num7.style.transform = `scale(1.2) translateY(20px) skewX(-5deg)`;
+                    num7.classList.add('glitch');
+                    break;
+                    
+                case 2:
+                    // Show 7 with particles
+                    scene1.style.transform = `translateZ(-1000px) rotateY(90deg)`;
+                    scene2.style.transform = `translateZ(0px) rotateY(0deg)`;
+                    num7.style.opacity = 1;
+                    num7.style.transform = `scale(1) translateY(0)`;
+                    num7.classList.remove('glitch');
+                    createParticles();
+                    break;
+                    
+                case 3:
+                    // Combined view (the "67" moment)
+                    scene1.style.transform = `translateZ(-300px) rotateY(-45deg)`;
+                    scene2.style.transform = `translateZ(-300px) rotateY(45deg)`;
+                    num6.style.opacity = 0.7;
+                    num7.style.opacity = 0.7;
+                    num6.style.transform = `scale(0.8)`;
+                    num7.style.transform = `scale(0.8)`;
+                    break;
+            }
+            
+            // Continuous floating animation
+            num6.style.transform += ` translateY(${Math.sin(time) * 10}px)`;
+            num7.style.transform += ` translateY(${Math.cos(time) * 10}px)`;
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Particle system
+        function createParticles() {
+            for(let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * window.innerWidth + 'px';
+                    particle.style.top = Math.random() * window.innerHeight + 'px';
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const velocity = 2 + Math.random() * 3;
+                    let x = parseFloat(particle.style.left);
+                    let y = parseFloat(particle.style.top);
+                    
+                    document.body.appendChild(particle);
+                    
+                    const animateParticle = () => {
+                        x += Math.cos(angle) * velocity;
+                        y += Math.sin(angle) * velocity;
+                        particle.style.left = x + 'px';
+                        particle.style.top = y + 'px';
+                        particle.style.opacity = 1 - (x / window.innerWidth);
+                        
+                        if(x < window.innerWidth && y > 0) {
+                            requestAnimationFrame(animateParticle);
+                        } else {
+                            particle.remove();
+                        }
+                    };
+                    
+                    animateParticle();
+                }, i * 100);
+            }
+        }
+
+        // Text overlays
+        const texts = [
+            'THE',
+            'INFAMOUS',
+            '67',
+            'MEME',
+            'REIMAGINED',
+            'PROFESSIONALLY',
+            'CRINGE',
+            'IRONICALLY',
+            'UNFUNNY',
+            'PERFECT'
+        ];
+
+        function showText() {
+            const text = document.createElement('div');
+            text.className = 'text';
+            text.textContent = texts[Math.floor(Math.random() * texts.length)];
+            text.style.left = Math.random() * 80 + 10 + '%';
+            text.style.top = Math.random() * 80 + 10 + '%';
+            text.style.fontSize = (1 + Math.random() * 2) + 'rem';
+            document.body.appendChild(text);
+            
+            // Animate in
+            setTimeout(() => {
+                text.style.opacity = 1;
+                text.style.transform = 'translateX(20px)';
+            }, 10);
+            
+            // Animate out
+            setTimeout(() => {
+                text.style.opacity = 0;
+                text.style.transform = 'translateX(-20px)';
+                setTimeout(() => text.remove(), 500);
+            }, 2000);
+        }
+
+        setInterval(showText, 1500);
+
+        // Start animation
+        animate();
+
+        // Add random glitch effect
+        setInterval(() => {
+            if(Math.random() > 0.7) {
+                document.body.style.filter = 'hue-rotate(90deg) blur(1px)';
+                setTimeout(() => {
+                    document.body.style.filter = 'none';
+                }, 100);
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
